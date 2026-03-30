@@ -22,7 +22,7 @@ body:
     attributes:
       label: "Are you modding a build from source or from the mods folder?"
       options:
-        - Lua
+        - Mods
         - Source
     validations:
       required: true
