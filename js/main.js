@@ -1,0 +1,61 @@
+// Input, UI wiring, touch controls, main loop
+const N={ArrowLeft:[-1,0,0],ArrowRight:[1,0,0],ArrowUp:[0,0,-1],ArrowDown:[0,0,1],PageUp:[0,1,0],PageDown:[0,-1,0]},TK={Digit1:'select',Digit2:'move',Digit3:'scale',Digit4:'rotate'};
+const ptr=new Map(),ray=new T.Raycaster(),v2=new T.Vector2();let moved=0,fy=0;
+const mray=e=>{const r=cv.getBoundingClientRect();v2.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(v2,cam)};
+addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;keys[e.code]=1;if(TK[e.code]&&!playing)setTool(TK[e.code]);
+if(!playing&&sel&&sel.Position?.X!==undefined&&N[e.code]){const d=N[e.code],p=sel.Position,k=e.shiftKey?5:1;sel.Position=V(p.X+d[0]*k,p.Y+d[1]*k,p.Z+d[2]*k);props();e.preventDefault()}
+if(e.code=='Delete'&&!playing)$('#bd').click();if(e.code=='Space')e.preventDefault()});
+addEventListener('keyup',e=>keys[e.code]=0);
+cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);moved=0;mray(e);if(ptr.size==0&&gzDown()){drag.id=e.pointerId;return}ptr.set(e.pointerId,e)};
+cv.onpointermove=e=>{if(drag&&drag.id==e.pointerId){mray(e);gzMove();return}const o=ptr.get(e.pointerId);if(!o)return;const dx=e.clientX-o.clientX,dy=e.clientY-o.clientY;moved+=Math.abs(dx)+Math.abs(dy);
+if(ptr.size==2){const [a,b]=[...ptr.values()],d0=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);ptr.set(e.pointerId,e);const [c,d]=[...ptr.values()];O.dist=clamp(O.dist*d0/(Math.hypot(c.clientX-d.clientX,c.clientY-d.clientY)||1),5,900)}
+else{O.yaw-=dx*.006;O.pitch=clamp(O.pitch+dy*.006,-.2,1.5);ptr.set(e.pointerId,e)}};
+cv.onpointerup=e=>{if(drag&&drag.id==e.pointerId){drag=null;props();return}ptr.delete(e.pointerId);if(moved<6&&!playing){mray(e);const h=ray.intersectObjects(scene.children.filter(c=>c.userData.i&&!c.userData.i.Locked))[0];select(h?h.object.userData.i:null)}};
+cv.onpointercancel=e=>{ptr.delete(e.pointerId);drag=null};
+cv.onwheel=e=>{O.dist=clamp(O.dist*(1+Math.sign(e.deltaY)*.1),5,900)};
+// touch UI: joystick works in edit (moves camera) and play (moves character)
+const jE=$('#joy'),kn=$('#knob'),jb=$('#jb'),jd=$('#jd');
+function jm(e){const r=jE.getBoundingClientRect();let x=(e.clientX-r.left-55)/45,y=(e.clientY-r.top-55)/45;const l=Math.hypot(x,y);if(l>1){x/=l;y/=l}joy={x,y};kn.style.transform=`translate(${x*35}px,${y*35}px)`}
+jE.onpointerdown=e=>{jE.setPointerCapture(e.pointerId);jm(e)};jE.onpointermove=e=>{if(e.buttons)jm(e)};jE.onpointerup=()=>{joy={x:0,y:0};kn.style.transform=''};
+jb.onpointerdown=()=>{playing?jump=true:keys.KeyE=1};jb.onpointerup=()=>keys.KeyE=0;jd.onpointerdown=()=>keys.KeyQ=1;jd.onpointerup=()=>keys.KeyQ=0;
+function touchUI(){const t=matchMedia('(pointer:coarse)').matches;const on=t&&UIS.TouchControlsEnabled;jE.style.display=jb.style.display=on?'block':'none';jd.style.display=on&&!playing?'block':'none'}
+// project menu <-> editor
+const menu=on=>{$('#st').style.display=on?'block':'none';document.body.classList.toggle('menu',on)};
+const PROJECTS_KEY='plaza.savedProjects.v1';
+const getProjects=()=>{try{return JSON.parse(localStorage.getItem(PROJECTS_KEY)||'[]')}catch{return []}};
+const putProjects=p=>localStorage.setItem(PROJECTS_KEY,JSON.stringify(p));
+const captureProjectPreview=()=>{const oldPos=cam.position.clone(),oldQuat=cam.quaternion.clone(),oldFov=cam.fov;try{const bounds=new T.Box3(),items=scene.children.filter(o=>o.userData?.i);items.forEach(o=>bounds.expandByObject(o));if(!bounds.isEmpty()){const center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3()),span=Math.max(size.x,size.y,size.z,12),distance=span*1.65;cam.position.set(center.x+distance*.72,center.y+distance*.58,center.z+distance);cam.fov=48;cam.lookAt(center);cam.updateProjectionMatrix();ren.render(scene,cam)}return cv.toDataURL('image/jpeg',.78)}catch{return ''}finally{cam.position.copy(oldPos);cam.quaternion.copy(oldQuat);cam.fov=oldFov;cam.updateProjectionMatrix();ren.render(scene,cam)}};
+const downloadPlaza=(name,data)=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name.replace(/[^a-z0-9 _-]/gi,'').trim().replace(/\s+/g,'-')+'.plaza';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)};
+const save=()=>{if(playing)return;const shade=document.createElement('div');shade.className='save-shade';shade.innerHTML='<section class="save-box"><h2>Save Plaza Project</h2><label>Project name</label><input id="project-name" maxlength="60" placeholder="My Plaza Project"><div class="save-actions"><button id="save-cancel">Cancel</button><button id="save-confirm">Save Project</button></div></section>';document.body.append(shade);const name=shade.querySelector('#project-name');name.focus();shade.querySelector('#save-cancel').onclick=()=>shade.remove();shade.onclick=e=>{if(e.target===shade)shade.remove()};shade.querySelector('#save-confirm').onclick=()=>{const n=name.value.trim();if(!n){name.focus();name.placeholder='Please enter a project name';return}const file=ser(root),thumbnail=captureProjectPreview();const entry={id:Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),name:n,updatedAt:new Date().toISOString(),file,thumbnail};const projects=getProjects();projects.unshift(entry);putProjects(projects);downloadPlaza(n,file);shade.remove();renderSavedProjects();out('Saved '+n+'.plaza and added it to Saved Projects. The .plaza file is available to share.') }};
+const renderSavedProjects=()=>{const box=document.querySelector('#saved-project-list');if(!box)return;box.innerHTML='';const projects=getProjects();if(!projects.length){box.innerHTML='<p class="saved-empty">No saved projects yet. Use FILE → Save Project to create one.</p>';return}projects.forEach(p=>{const card=document.createElement('article');card.className='saved-project';const thumb=document.createElement('img');thumb.className='saved-thumb';thumb.alt=p.name+' 3D project preview';thumb.src=p.thumbnail||'';const title=document.createElement('h3');title.textContent=p.name;const actions=document.createElement('div');actions.className='saved-actions';const editBtn=document.createElement('button'),playBtn=document.createElement('button'),deleteBtn=document.createElement('button');editBtn.textContent='Edit';playBtn.textContent='▶ Play';deleteBtn.textContent='Delete';actions.append(editBtn,playBtn,deleteBtn);card.append(thumb,title,actions);const openProject=()=>{stop();loadRoot(p.file);menu(false);document.body.classList.remove('play-only');out('Opened '+p.name)};editBtn.onclick=openProject;playBtn.onclick=()=>{openProject();play();document.body.classList.add('play-only')};deleteBtn.onclick=()=>{if(confirm('Delete "'+p.name+'" from Saved Projects?')){putProjects(getProjects().filter(x=>x.id!==p.id));renderSavedProjects()}};box.append(card)})};
+
+document.querySelectorAll('#tools button').forEach(b=>b.onclick=()=>setTool(b.dataset.t));
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x==b));document.querySelectorAll('.pp').forEach(p=>p.classList.toggle('hide',p.dataset.p!=b.dataset.p))});
+$('#bf').onclick=e=>{const r=e.target.getBoundingClientRect();showMenu([['📄 New',()=>{stop();menu(true)}],['📂 Open…',()=>$('#fi').click()],['💾 Save Project',save],['🚀 Publish Game',()=>HOME.publish()],['🧑 Avatar & Profile',()=>HOME.open('avatar')],['🌐 Multiplayer',()=>HOME.open('online')],['📖 Lua API doc',()=>window.open('docs/PLAZA_LUA_API.md')]],r.left,r.bottom+4)};
+$('#bp').onclick=()=>{document.body.classList.remove('play-only');play()};$('#bx').onclick=()=>{stop();document.body.classList.remove('play-only')};$('#play-exit').onclick=()=>{stop();document.body.classList.remove('play-only');menu(true);$('#saved-tab').click()};$('#bi').onclick=()=>!playing&&create('Part',svc.Workspace);
+$('#bd').onclick=()=>{if(!playing&&sel)del(tg(sel))};$('#bc').onclick=()=>sel&&cp(tg(sel));$('#bv').onclick=()=>paste(sel||svc.Workspace);$('#bu').onclick=()=>sel&&dup(tg(sel));
+$('#bm').onclick=e=>{multiMode=!multiMode;e.target.classList.toggle('on',multiMode)};$('#bo2').onclick=()=>picker(sel||svc.Workspace,{clientX:20,clientY:110});
+const pp=()=>[...multi].filter(x=>PART.includes(x.C));$('#bun').onclick=()=>pp().length>1?union(pp()):out('Select 2+ parts first (☑ Multi, or Ctrl-click in Explorer).');
+$('#bsep').onclick=()=>sel&&sel.C=='UnionOperation'&&sep(sel);$('#bw').onclick=()=>pp().length>1?weld(pp()):out('Select 2+ parts first.');
+const tgl=id=>$(id).classList.toggle('hide');$('#vq').onclick=()=>tgl('#ex');$('#vp2').onclick=()=>tgl('#pr');$('#vo').onclick=()=>{tgl('#out');tgl('#cmd')};
+$('#so').onclick=()=>$('#fi').click();
+$('#saved-tab').onclick=()=>{$('#saved-tab').classList.add('on');$('#templates-tab').classList.remove('on');document.querySelector('#template-view').classList.add('hide');document.querySelector('#saved-view').classList.remove('hide');renderSavedProjects()};
+$('#templates-tab').onclick=()=>{$('#templates-tab').classList.add('on');$('#saved-tab').classList.remove('on');document.querySelector('#saved-view').classList.add('hide');document.querySelector('#template-view').classList.remove('hide')};
+$('#fi').onchange=async e=>{const f=e.target.files[0];if(f)try{stop();document.body.classList.remove('play-only');loadRoot(JSON.parse(await f.text()));menu(false)}catch(x){out('Open failed: '+x)}e.target.value=''};
+document.querySelectorAll('.card[data-k]').forEach(c=>c.onclick=()=>{loadRoot(tmpl(c.dataset.k));menu(false);out('Plaza Studio ready. Tap a part, then pick Move/Scale/Rotate (keys 1-4). Long-press or right-click Explorer items for more.')});
+$('#ea').oninput=()=>{if(sel)sel.Source=$('#ea').value};$('#ec').onclick=()=>$('#ed').style.display='none';
+$('#cmd').onkeydown=e=>{if(e.key=='Enter'){window.__src=e.target.value;e.target.value='';try{execF()}catch(x){out('Error: '+x)}}};
+if(innerWidth<800){$('#ex').classList.add('hide');$('#pr').classList.add('hide')}
+new ResizeObserver(()=>{const v=$('#vp');ren.setPixelRatio(Math.min(devicePixelRatio,2));ren.setSize(v.clientWidth,v.clientHeight,false);cam.aspect=v.clientWidth/v.clientHeight;cam.updateProjectionMatrix()}).observe($('#vp'));
+// main loop
+loadRoot(tmpl('base'));buildGz();touchUI();let last=performance.now(),fr=0,acc=0,pm=0;
+function loop(t){requestAnimationFrame(loop);const dt=Math.min((t-last)/1000,.05);last=t;
+try{if(playing){if(dirty){list=[];welds=[];(function w(i){if(i.C=='WeldConstraint')welds.push(i);if(PART.includes(i.C)&&inWS(i)&&!i.Negative&&!(i.Parent&&i.Parent.C=='UnionOperation'))list.push(i);if(i.C=='UnionOperation'&&inWS(i))list.push(...(UC.get(i)||[]));i.K.forEach(w)})(svc.Workspace);dirty=0}
+control();if(!vInit&&pl){setupVeh();vInit=1}if(drv)drive(dt);const t0=performance.now();step(dt);pm=performance.now()-t0;for(const b of list)if(!b.Anchored||b._w)mv(b);if(drv)follow(dt);prv=cur;cur=new Set;hb.fire(dt);const p=pl.Position,v=pl.AssemblyLinearVelocity,cs=UIS.CameraSubject?UIS.CameraSubject.Position:p;O.t.set(cs.X,cs.Y+1.5,cs.Z);if(Math.hypot(v.X,v.Z)>.5){let df=Math.atan2(v.X,v.Z)-fy;df=Math.atan2(Math.sin(df),Math.cos(df));fy+=df*Math.min(1,dt*14)}M.get(pl).rotation.y=fy;PLY.frame(dt,fy)}else edcam(dt);
+window.__dt=dt;stepF()}catch(e){out('Error: '+e)}
+if(guiDirty&&!playing&&svc.StarterGui)mountGui();
+if(rt){tree();rt=0}
+const c=Math.cos(O.pitch),{x,y,z}=O.t;cam.position.set(x+Math.sin(O.yaw)*c*O.dist,y+Math.sin(O.pitch)*O.dist,z+Math.cos(O.yaw)*c*O.dist);cam.lookAt(x,y,z);
+sun.position.set(x+Math.cos(sunA)*200,y+Math.max(40,Math.sin(sunA)*200),z+60);sun.target.position.set(x,y,z);gzPos();
+ren.render(scene,cam);fr++;acc+=dt;if(acc>.5){$('#hud').textContent=`${Math.round(fr/acc)} FPS · ${ren.info.render.triangles} tris · physics ${pm.toFixed(2)}ms · bodies ${list.length}`;fr=acc=0}}
+requestAnimationFrame(loop);
