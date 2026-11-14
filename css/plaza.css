@@ -198,3 +198,9 @@ body.chat-min #chat{display:none!important}
 .fl{display:flex;flex-direction:column;gap:6px;min-width:0}.r2{display:flex;gap:8px}.r2 select{flex:1;min-width:0}.fl input{min-width:0}.st code,.nf code{user-select:text;-webkit-user-select:text;word-break:break-all}
 .arow{display:flex;align-items:center;gap:10px;padding:10px;background:#1c1d21;border-radius:12px;margin-top:8px;flex-wrap:wrap}.arow .pv{width:52px;height:52px;font-size:22px}
 .arow .nf{flex:1;min-width:140px}.arow .nf b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.arow small{color:var(--mu)}
+
+/* ===== accounts ===== */
+#auth{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:20px;overflow:auto}
+.ac{width:min(400px,100%);background:#1c1d21;border:1px solid var(--ln);border-radius:20px;padding:26px}
+.ac .logo{font-size:30px;letter-spacing:.14em;font-weight:800;color:#fff;background:none;-webkit-text-fill-color:#fff;animation:none;padding:0;margin:0 0 6px}
+.ac input{width:100%;box-sizing:border-box;margin:6px 0}.ac .big{width:100%;margin-top:10px;padding:14px}.ac .subtabs{margin:14px 0 10px}
