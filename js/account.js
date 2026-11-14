@@ -19,7 +19,7 @@ A.setProfile=p=>{if(!p)return;A.profile={...p,email:ses.u.email};wr(PK,A.profile
 A.ensureProfile=async()=>{const u=ses.u.id,h=await H();let r=await fetch(C.R+'profiles?select=*&user_id=eq.'+u,{headers:h}).then(C.J);
 if(!r.length){const un=rd('plaza_pending')||'';for(let i=0;i<4&&!r.length;i++){const name=(un&&i==0)?un:(un||'Player').slice(0,16)+Math.floor(1000+Math.random()*9000);
 const res=await fetch(C.R+'profiles',{method:'POST',headers:await H({Prefer:'return=representation'}),body:JSON.stringify({user_id:u,username:name,nickname:name})});if(res.ok)r=await res.json()}}
-wr('plaza_pending',null);A.setProfile(r[0]);return r[0]};
+wr('plaza_pending',null);if(r[0]&&r[0].banned){alert('This account has been banned.');A.signOut();return}A.setProfile(r[0]);return r[0]};
 A.signUp=async(un,email,pw)=>{un=String(un||'').trim();email=String(email||'').trim();
 if(!/^[A-Za-z0-9_]{3,20}$/.test(un))throw Error('Username: 3-20 letters, numbers or _');if(!/^\S+@\S+\.\S+$/.test(email))throw Error('Enter a valid email.');if(String(pw||'').length<6)throw Error('Password must be 6+ characters.');
 const ex=await fetch(C.R+'profiles?select=user_id&username_lc=eq.'+encodeURIComponent(un.toLowerCase()),{headers:C.H()}).then(C.J);if(ex.length)throw Error('That username is taken.');

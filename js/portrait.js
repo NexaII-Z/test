@@ -1,0 +1,4 @@
+// Profile pictures: renders the avatar facing the screen, camera zoomed on the head (shoulders, torso and arms around it).
+(()=>{const TH=THREE,cache=new Map;let r,s,c;
+function init(){r=new TH.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});r.setPixelRatio(1);r.setSize(256,256,false);r.setClearColor(0x000000,0);s=new TH.Scene();s.add(new TH.HemisphereLight(0xffffff,0x707080,1.05));const d=new TH.DirectionalLight(0xffffff,.8);d.position.set(3,6,9);s.add(d);c=new TH.PerspectiveCamera(24,1,.1,60);c.position.set(0,3.95,7.4);c.lookAt(0,3.95,0)}
+window.PORT=av=>{try{av=AV.clean(av);const k=JSON.stringify(av);if(cache.has(k))return cache.get(k);if(!r)init();const a=AV.make(av);a.g.rotation.y=-.15;s.add(a.g);a.upd(.016,0,false,'');r.render(s,c);const u=r.domElement.toDataURL('image/png');s.remove(a.g);AV.dispose(a.g);cache.set(k,u);return u}catch(e){return''}}})();

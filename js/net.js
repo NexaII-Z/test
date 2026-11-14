@@ -23,7 +23,7 @@ function doEmote(){}
 function submit(){const i=$('#ci');let t=i.value.trim();i.value='';if(!t)return;const now=performance.now();if(now-lastChat<800)return sys('Slow down a little!');lastChat=now;
 if(t[0]=='/'){const m=t.match(/^\/e(?:mote)?\s+(\w+)/i);return sys('Unknown command.')}
 t=clean(t.slice(0,120));say(P.prof.name,t,true);me&&bubble(me,t);net&&net.sC(t)}
-const addPeer=(d,id,max)=>{if(!d||typeof d.n!='string'||peers.has(id)||peers.size>=max-1)return;const a=actor(clean(d.n.slice(0,20))||'Player',AV.clean(d.a));peers.set(id,a);sys(a.name+' joined');count()},onState=(d,id)=>{const a=peers.get(id);if(!a||!Array.isArray(d))return;a.tp.set(+d[0]||0,(+d[1]||0)-2.5,+d[2]||0);a.ty=+d[3]||0;a.sp=+d[4]||0;a.air=!!d[5];a.em=EM[d[6]]||'';if(a.first){a.g.position.copy(a.tp);a.first=0}},onChat=(txt,id)=>{const a=peers.get(id);if(!a||typeof txt!='string')return;txt=clean(txt.slice(0,120));say(a.name,txt);bubble(a,txt)};
+const addPeer=(d,id,max)=>{if(!d||typeof d.n!='string'||peers.has(id)||peers.size>=max-1)return;const a=actor(clean(d.n.slice(0,20))||'Player',AV.clean(d.a));a.spec=AV.clean(d.a);peers.set(id,a);sys(a.name+' joined');count()},onState=(d,id)=>{const a=peers.get(id);if(!a||!Array.isArray(d))return;a.tp.set(+d[0]||0,(+d[1]||0)-2.5,+d[2]||0);a.ty=+d[3]||0;a.sp=+d[4]||0;a.air=!!d[5];a.em=EM[d[6]]||'';if(a.first){a.g.position.copy(a.tp);a.first=0}},onChat=(txt,id)=>{const a=peers.get(id);if(!a||typeof txt!='string')return;txt=clean(txt.slice(0,120));say(a.name,txt);bubble(a,txt)};
 // Realtime transport (Supabase Broadcast over WebSocket): reliable, no codes. Falls back to Trystero if no Supabase config.
 async function joinSB(t,code,max){const m=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');if(t!==tok)return;
 const C=window.PLAZA_CLOUD,sb=m.createClient(C.url,C.key),ch=sb.channel('plaza-'+code,{config:{broadcast:{self:false}}}),id=Math.random().toString(36).slice(2,10),seen=new Map;let iv=0,lw=0,ls='',lt=0;
@@ -45,7 +45,7 @@ gH((d,id)=>addPeer(d,id,max));gS(onState);gC(onChat);
 sys(G.room?'🌐 Connected! Other players of this game will show up here.':'🌐 Connected to room '+code+'. Share the code or invite link so friends can join!');count()}
 catch(e){sys('Multiplayer unavailable ('+(e.message||e)+'). Playing solo.')}}
 const r2=v=>Math.round(v*100)/100;
-const P=window.PLY={prof:load(),clean,players:()=>[...peers.values()].map(a=>a.name),save(){try{localStorage.setItem(KEY,JSON.stringify(P.prof))}catch(e){}},
+const P=window.PLY={prof:load(),clean,players:()=>[...peers.values()].map(a=>({name:a.name,av:a.spec})),save(){try{localStorage.setItem(KEY,JSON.stringify(P.prof))}catch(e){}},
 start(){tok++;const G=window.PLAZA_GAME||{};document.body.classList.add('playing');document.body.classList.toggle('nochat',G.chat===false);document.body.classList.toggle('chat-min',matchMedia('(max-width:700px)').matches);$('#cbub').classList.remove('dot');me=AV.make(P.prof.av);me.bub=null;scene.add(me.g);$('#cl').innerHTML='';
 sys('Welcome, '+P.prof.name+'! Press Enter or tap 💬 to chat.');if(!G.solo&&(P.prof.mp||G.room))join(tok);else sys(G.title?'Solo game.':'Solo mode. Turn on 🌐 Multiplayer (Test tab) to play with friends.');count()},
 stop(){tok++;document.body.classList.remove('playing');if(me){scene.remove(me.g);AV.dispose(me.g);me=null}peers.forEach(a=>{scene.remove(a.g);AV.dispose(a.g)});peers.clear();if(net){try{net.room.leave()}catch(e){}net=null}},

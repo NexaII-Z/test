@@ -9,8 +9,9 @@ const ins=async b=>{try{return(await J(await fetch(T,{method:'POST',headers:H({P
 iso=ms=>encodeURIComponent(new Date(Date.now()-ms).toISOString()),
 lv=(g,v,t)=>fetch(R+'game_live',{method:'POST',headers:H({Prefer:'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify({game_id:g,voter:v,seen:t}),keepalive:true}).catch(()=>{});
 window.CLOUD={ins,on,U,K,R,H,J,J0,
+site(){return GQ('site_settings?select=*').then(r=>Object.fromEntries(r.map(x=>[x.key,x.value]))).catch(()=>({}))},
 me:p=>fetch(R+'players',{method:'POST',headers:H({Prefer:'resolution=merge-duplicates'}),body:JSON.stringify({...p,last_seen:new Date().toISOString()})}).then(J0),
-async friends(u){const rows=await GQ('friends?select=*&or=(a.eq.'+u+',b.eq.'+u+')'),ids=[...new Set(rows.map(r=>r.a==u?r.b:r.a))],ps=ids.length?await GQ('players?select=uid,name,code,last_seen,game_id,game_title&uid=in.('+ids.join(',')+')'):[],m=Object.fromEntries(ps.map(p=>[p.uid,p])),o={f:[],inc:[],out:[]};
+async friends(u){const rows=await GQ('friends?select=*&or=(a.eq.'+u+',b.eq.'+u+')'),ids=[...new Set(rows.map(r=>r.a==u?r.b:r.a))],ps=ids.length?await GQ('players?select=uid,name,code,last_seen,game_id,game_title,av&uid=in.('+ids.join(',')+')'):[],m=Object.fromEntries(ps.map(p=>[p.uid,p])),o={f:[],inc:[],out:[]};
 for(const r of rows){const x=r.a==u?r.b:r.a,it={id:r.id,p:m[x]||{uid:x,name:'Player'}};if(r.status=='accepted')o.f.push(it);else if(r.b==u)o.inc.push(it);else o.out.push(it)}return o},
 async add(u,code){const t=(await GQ('players?select=uid,name&code=eq.'+encodeURIComponent(String(code).toUpperCase().trim())))[0];if(!t)throw Error('No player with that code.');if(t.uid==u)throw Error('That is your own code.');
 const ex=(await GQ('friends?select=*&or=(and(a.eq.'+u+',b.eq.'+t.uid+'),and(a.eq.'+t.uid+',b.eq.'+u+'))'))[0];
