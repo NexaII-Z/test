@@ -1,7 +1,7 @@
 // Player runtime: avatar in Play, chat + swear filter, and serverless WebRTC multiplayer.
 // Multiplayer uses Trystero (peers find each other through public BitTorrent trackers, then talk
 // directly browser-to-browser over WebRTC) so a plain static site can host a multiplayer game.
-(()=>{const KEY='plaza.profile.v1',TH=THREE,EM=['','wave','dance','cheer'],rcode=()=>Math.random().toString(36).slice(2,7).toUpperCase();
+(()=>{const KEY='plaza.profile.v1',TH=THREE,EM=[''],rcode=()=>Math.random().toString(36).slice(2,7).toUpperCase();
 const base=()=>({name:'Player'+(1000+Math.floor(Math.random()*9000)),av:AV.def(),mp:false,room:rcode()});
 function load(){try{const p=JSON.parse(localStorage.getItem(KEY));if(p&&p.av)return{...base(),...p,av:AV.clean(p.av)}}catch(e){}return base()}
 // ---- swear filter: leetspeak, repeated letters and f.u.c.k-style separators are normalised; hits become ####
@@ -19,9 +19,9 @@ function drop(id){const a=peers.get(id);if(!a)return;sys(a.name+' left the game'
 const count=()=>{const e=$('#pc');if(e)e.textContent='👥 '+(peers.size+1)+(net&&!(window.PLAZA_GAME&&PLAZA_GAME.room)?' · '+P.prof.room:'')};
 function say(n,t,mine){if(!mine&&document.body.classList.contains('chat-min'))$('#cbub').classList.add('dot');const d=document.createElement('div'),b=document.createElement('b');let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;b.style.color=`hsl(${h},85%,72%)`;b.textContent=n+': ';d.append(b,document.createTextNode(t));if(mine)d.style.background='#2b2478aa';const l=$('#cl');l.append(d);while(l.children.length>40)l.firstChild.remove();l.scrollTop=1e9}
 function sys(t){const d=document.createElement('div');d.className='sys';d.textContent=t;const l=$('#cl');l.append(d);l.scrollTop=1e9}
-function doEmote(e){if(!EM.includes(e)||!e)return sys('Emotes: /e wave · /e dance · /e cheer');emote=e;et=performance.now()}
+function doEmote(){}
 function submit(){const i=$('#ci');let t=i.value.trim();i.value='';if(!t)return;const now=performance.now();if(now-lastChat<800)return sys('Slow down a little!');lastChat=now;
-if(t[0]=='/'){const m=t.match(/^\/e(?:mote)?\s+(\w+)/i);return m?doEmote(m[1].toLowerCase()):sys('Commands: /e wave|dance|cheer')}
+if(t[0]=='/'){const m=t.match(/^\/e(?:mote)?\s+(\w+)/i);return sys('Unknown command.')}
 t=clean(t.slice(0,120));say(P.prof.name,t,true);me&&bubble(me,t);net&&net.sC(t)}
 const addPeer=(d,id,max)=>{if(!d||typeof d.n!='string'||peers.has(id)||peers.size>=max-1)return;const a=actor(clean(d.n.slice(0,20))||'Player',AV.clean(d.a));peers.set(id,a);sys(a.name+' joined');count()},onState=(d,id)=>{const a=peers.get(id);if(!a||!Array.isArray(d))return;a.tp.set(+d[0]||0,(+d[1]||0)-2.5,+d[2]||0);a.ty=+d[3]||0;a.sp=+d[4]||0;a.air=!!d[5];a.em=EM[d[6]]||'';if(a.first){a.g.position.copy(a.tp);a.first=0}},onChat=(txt,id)=>{const a=peers.get(id);if(!a||typeof txt!='string')return;txt=clean(txt.slice(0,120));say(a.name,txt);bubble(a,txt)};
 // Realtime transport (Supabase Broadcast over WebSocket): reliable, no codes. Falls back to Trystero if no Supabase config.
@@ -47,13 +47,13 @@ catch(e){sys('Multiplayer unavailable ('+(e.message||e)+'). Playing solo.')}}
 const r2=v=>Math.round(v*100)/100;
 const P=window.PLY={prof:load(),clean,players:()=>[...peers.values()].map(a=>a.name),save(){try{localStorage.setItem(KEY,JSON.stringify(P.prof))}catch(e){}},
 start(){tok++;const G=window.PLAZA_GAME||{};document.body.classList.add('playing');document.body.classList.toggle('nochat',G.chat===false);document.body.classList.toggle('chat-min',matchMedia('(max-width:700px)').matches);$('#cbub').classList.remove('dot');me=AV.make(P.prof.av);me.bub=null;scene.add(me.g);$('#cl').innerHTML='';
-sys('Welcome, '+P.prof.name+'! Enter = chat · /e wave, /e dance, /e cheer');if(!G.solo&&(P.prof.mp||G.room))join(tok);else sys(G.title?'Solo game.':'Solo mode. Turn on 🌐 Multiplayer (Test tab) to play with friends.');count()},
+sys('Welcome, '+P.prof.name+'! Press Enter or tap 💬 to chat.');if(!G.solo&&(P.prof.mp||G.room))join(tok);else sys(G.title?'Solo game.':'Solo mode. Turn on 🌐 Multiplayer (Test tab) to play with friends.');count()},
 stop(){tok++;document.body.classList.remove('playing');if(me){scene.remove(me.g);AV.dispose(me.g);me=null}peers.forEach(a=>{scene.remove(a.g);AV.dispose(a.g)});peers.clear();if(net){try{net.room.leave()}catch(e){}net=null}},
 frame(dt,fy){if(!me)return;const p=pl.Position,v=pl.AssemblyLinearVelocity,sp=Math.hypot(v.X,v.Z),air=!pl.ground;me.g.visible=p.Y>-400;me.g.position.set(p.X,p.Y-2.5,p.Z);me.g.rotation.y=fy;
 if(emote&&(sp>1.5||air))emote='';me.upd(dt,sp,air,emote);
 if(me.bub&&performance.now()>me.bub.exp){me.g.remove(me.bub);me.bub=null}
 const now=performance.now();if(net&&now-last>100){last=now;net.sS([r2(p.X),r2(p.Y),r2(p.Z),r2(fy),r2(sp),air?1:0,EM.indexOf(emote)])}
 for(const a of peers.values()){a.g.position.lerp(a.tp,Math.min(1,dt*10));let d=a.ty-a.g.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));a.g.rotation.y+=d*Math.min(1,dt*10);a.av.upd(dt,a.sp,a.air,a.em);if(a.bub&&now>a.bub.exp){a.g.remove(a.bub);a.bub=null}}}};
-$('#cbub').onclick=()=>{document.body.classList.toggle('chat-min');$('#cbub').classList.remove('dot')};$('#cs').onclick=submit;$('#ci').onkeydown=e=>{if(e.key=='Enter')submit();if(e.key=='Escape')e.target.blur()};document.querySelectorAll('#em button').forEach(b=>b.onclick=()=>doEmote(b.dataset.e));
+$('#cbub').onclick=()=>{document.body.classList.toggle('chat-min');$('#cbub').classList.remove('dot')};$('#cs').onclick=submit;$('#ci').onkeydown=e=>{if(e.key=='Enter')submit();if(e.key=='Escape')e.target.blur()};
 addEventListener('keydown',e=>{if(!playing||e.target.tagName=='INPUT')return;if(e.code=='Enter'||e.key=='/'){const i=$('#ci');i.focus();if(e.key=='/')i.value='/';e.preventDefault()}});
 })();

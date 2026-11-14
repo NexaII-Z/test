@@ -9,7 +9,7 @@ addEventListener('keyup',e=>keys[e.code]=0);
 cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);moved=0;mray(e);if(ptr.size==0&&gzDown()){drag.id=e.pointerId;return}ptr.set(e.pointerId,e)};
 cv.onpointermove=e=>{if(drag&&drag.id==e.pointerId){mray(e);gzMove();return}const o=ptr.get(e.pointerId);if(!o)return;const dx=e.clientX-o.clientX,dy=e.clientY-o.clientY;moved+=Math.abs(dx)+Math.abs(dy);
 if(ptr.size==2){const [a,b]=[...ptr.values()],d0=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);ptr.set(e.pointerId,e);const [c,d]=[...ptr.values()];O.dist=clamp(O.dist*d0/(Math.hypot(c.clientX-d.clientX,c.clientY-d.clientY)||1),5,900)}
-else{O.yaw-=dx*.006;O.pitch=clamp(O.pitch+dy*.006,-.2,1.5);ptr.set(e.pointerId,e)}};
+else{O.yaw-=dx*.006*(window.LOOKS||1);O.pitch=clamp(O.pitch+dy*.006*(window.LOOKS||1)*(window.INVY?-1:1),-.2,1.5);ptr.set(e.pointerId,e)}};
 cv.onpointerup=e=>{if(drag&&drag.id==e.pointerId){drag=null;props();return}ptr.delete(e.pointerId);if(moved<6&&!playing){mray(e);const h=ray.intersectObjects(scene.children.filter(c=>c.userData.i&&!c.userData.i.Locked))[0];select(h?h.object.userData.i:null)}};
 cv.onpointercancel=e=>{ptr.delete(e.pointerId);drag=null};
 cv.onwheel=e=>{O.dist=clamp(O.dist*(1+Math.sign(e.deltaY)*.1),5,900)};
@@ -44,9 +44,9 @@ $('#templates-tab').onclick=()=>{$('#templates-tab').classList.add('on');$('#sav
 $('#fi').onchange=async e=>{const f=e.target.files[0];if(f)try{stop();document.body.classList.remove('play-only');loadRoot(JSON.parse(await f.text()));menu(false)}catch(x){out('Open failed: '+x)}e.target.value=''};
 document.querySelectorAll('.card[data-k]').forEach(c=>c.onclick=()=>{loadRoot(tmpl(c.dataset.k));menu(false);out('Plaza Studio ready. Tap a part, then pick Move/Scale/Rotate (keys 1-4). Long-press or right-click Explorer items for more.')});
 $('#ea').oninput=()=>{if(sel)sel.Source=$('#ea').value};$('#ec').onclick=()=>$('#ed').style.display='none';
-$('#cmd').onkeydown=e=>{if(e.key=='Enter'){window.__src=e.target.value;e.target.value='';try{execF()}catch(x){out('Error: '+x)}}};
+$('#cmd').onkeydown=e=>{if(e.key=='Enter'){window.__src=e.target.value;e.target.value='';try{execF()}catch(x){out('Error: '+x)}}};$('#cmd').addEventListener('paste',e=>{const t=(e.clipboardData&&e.clipboardData.getData('text'))||'';if(t.indexOf('\n')>=0){e.preventDefault();const i=e.target,a=i.selectionStart,b=i.selectionEnd,v=t.replace(/\r?\n/g,' ');i.value=i.value.slice(0,a)+v+i.value.slice(b);i.selectionStart=i.selectionEnd=a+v.length}});
 if(innerWidth<800){$('#ex').classList.add('hide');$('#pr').classList.add('hide')}
-new ResizeObserver(()=>{const v=$('#vp');ren.setPixelRatio(Math.min(devicePixelRatio,2));ren.setSize(v.clientWidth,v.clientHeight,false);cam.aspect=v.clientWidth/v.clientHeight;cam.updateProjectionMatrix()}).observe($('#vp'));
+new ResizeObserver(()=>{const v=$('#vp');ren.setPixelRatio(window.QPR?QPR():Math.min(devicePixelRatio,2));ren.setSize(v.clientWidth,v.clientHeight,false);cam.aspect=v.clientWidth/v.clientHeight;cam.updateProjectionMatrix()}).observe($('#vp'));
 // main loop
 loadRoot(tmpl('base'));buildGz();touchUI();let last=performance.now(),fr=0,acc=0,pm=0;
 function loop(t){requestAnimationFrame(loop);const dt=Math.min((t-last)/1000,.05);last=t;

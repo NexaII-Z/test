@@ -13,13 +13,13 @@ me=async()=>JSON.parse(atob((await token()).split('.')[1].replace(/-/g,'+').repl
 const A=new Map(),key=i=>i.p||i;
 function aud(i){i=key(i);let a=A.get(i);if(!a){a=new Audio();a.preload='auto';a.onended=()=>{if(!i.Looped)i.Playing=false};A.set(i,a)}return a}
 function sprop(i,k){i=key(i);const a=aud(i);
-const sync=()=>{const u=url(i.SoundId);if(a.getAttribute('src')!==u){u?a.src=u:a.removeAttribute('src')}a.volume=Math.min(1,Math.max(0,+i.Volume||0));a.loop=!!i.Looped;a.playbackRate=Math.max(.25,Math.min(4,+i.PlaybackSpeed||1))};
+const sync=()=>{const u=url(i.SoundId);if(a.getAttribute('src')!==u){u?a.src=u:a.removeAttribute('src')}a.volume=Math.min(1,Math.max(0,+i.Volume||0))*(PZ.master==null?1:PZ.master);a.loop=!!i.Looped;a.playbackRate=Math.max(.25,Math.min(4,+i.PlaybackSpeed||1))};
 if(k=='Playing'){if(i.Playing){sync();a.play().catch(()=>{})}else a.pause()}else if(['SoundId','Volume','Looped','PlaybackSpeed'].includes(k))sync()}
 const walk=(n,f)=>{f(n);n.K.forEach(k=>walk(k,f))};
 // ---- ImageLabel / ImageButton ----
 function gimg(i,d){if(i.C!='ImageLabel'&&i.C!='ImageButton')return;const u=url(i.Image);d.style.backgroundImage=u?'url("'+u+'")':'';d.style.backgroundSize=({Fit:'contain',Crop:'cover'})[i.ScaleType]||'100% 100%';d.style.backgroundPosition='center';d.style.backgroundRepeat='no-repeat'}
 // ---- cloud API ----
-const PZ=window.PZ={id,url,gimg,sprop,
+const PZ=window.PZ={id,url,gimg,sprop,master:1,setMaster(v){this.master=v;A.forEach((a,i)=>{a.volume=Math.min(1,Math.max(0,+i.Volume||0))*v})},
 stop(i){const a=A.get(key(i));if(a){a.pause();a.currentTime=0}},stopAll(){A.forEach(a=>{a.pause();a.removeAttribute('src')});A.clear()},
 autoplay(r){try{walk(r,n=>{if(n.C=='Sound'&&n.Playing)sprop(n,'Playing')})}catch(e){}},
 async upload(it){const c=C(),i=crypto.randomUUID(),body=it.blob||it.file,mime=it.blob?'application/json':(it.file.type||EXT[ext(it.file.name)]||'application/octet-stream'),

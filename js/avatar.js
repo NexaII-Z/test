@@ -50,9 +50,6 @@ const S={ph:0,w:0,t:0},P=(o,k,v,f)=>o.rotation[k]+=(v-o.rotation[k])*f;
 function upd(dt,speed,air,emote){S.t+=dt;const t=S.t,f=Math.min(1,dt*14);S.w+=((air?0:Math.min(speed/14,1))-S.w)*Math.min(1,dt*12);S.ph+=dt*(speed>.5?speed*.62:0);const s=Math.sin(S.ph)*S.w,
 g={llx:s*.85,rlx:-s*.85,lax:-s*.85,rax:s*.85,laz:-.05-Math.sin(t*1.8)*.03,raz:.05+Math.sin(t*1.8)*.03,ty:0,hz:0,hx:0,by:0};
 if(air){Object.assign(g,{lax:-2.7,rax:-2.7,laz:-.25,raz:.25,llx:-.35,rlx:.35,hx:-.1})}
-else if(emote=='wave'){g.raz=2.7+Math.sin(t*9)*.35;g.rax=0;g.hz=.08}
-else if(emote=='dance'){const b=t*7;Object.assign(g,{laz:-(1.4+Math.sin(b)*.7),raz:1.4-Math.sin(b)*.7,lax:0,rax:0,llx:Math.sin(b)*.5,rlx:-Math.sin(b)*.5,ty:Math.sin(b/2)*.35,hz:Math.sin(b/2)*.18,by:Math.abs(Math.sin(b))*.25})}
-else if(emote=='cheer'){Object.assign(g,{laz:-2.8,raz:2.8,lax:0,rax:0,by:Math.abs(Math.sin(t*10))*.18})}
 P(ll,'x',g.llx,f);P(rl,'x',g.rlx,f);P(la,'x',g.lax,f);P(ra,'x',g.rax,f);P(la,'z',g.laz,f);P(ra,'z',g.raz,f);P(torso,'y',g.ty,f);P(head,'z',g.hz,f);P(head,'x',g.hx,f);body.position.y+=(g.by-body.position.y)*f;torso.scale.y=1+Math.sin(t*2)*.012;
 if(cape)P(cape,'x',.12+S.w*.5+(air?.6:0)+Math.sin(t*3)*.03,f)}
 return{g:root,upd,cfg}}

@@ -8,7 +8,7 @@ function syncMP(){const on=!!P.mp,b=$('#bmp');b.textContent='🌐 Multiplayer: '
 $('#online-view').innerHTML=`<div class="mpc"><h2>🌐 Play with friends</h2><p>Everyone who enters the same room code appears in your world with their own avatar, name tag, animations and chat. Connections are direct peer-to-peer (WebRTC), so there is no game server to run or pay for.</p>
 <div class="mprow"><label>Room code</label><input id="rc2" maxlength="12"><button id="rg">🎲 New code</button><button id="rcopy">🔗 Copy invite link</button></div>
 <label class="tgl"><input type="checkbox" id="mpt"> Join this room when I press Play</label>
-<ul class="how"><li>Synced live: position, walking, jumping, emotes (/e wave, /e dance, /e cheer), names, outfits and chat.</li><li>Chat hides swear words (leetspeak and f.u.c.k tricks included) on both the sender's and receiver's side.</li><li>Scripts run on every player's machine, so keep game logic deterministic.</li></ul></div>`;
+<ul class="how"><li>Synced live: position, walking, jumping, names, outfits and chat.</li><li>Chat hides swear words (leetspeak and f.u.c.k tricks included) on both the sender's and receiver's side.</li><li>Scripts run on every player's machine, so keep game logic deterministic.</li></ul></div>`;
 $('#mpt').onchange=e=>{P.mp=e.target.checked;syncMP()};$('#rc2').oninput=e=>{P.room=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');syncMP()};$('#room').oninput=e=>{P.room=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');syncMP()};
 $('#rg').onclick=()=>{P.room=Math.random().toString(36).slice(2,7).toUpperCase();syncMP()};$('#bmp').onclick=()=>{P.mp=!P.mp;syncMP()};
 const invite=()=>location.origin+location.pathname+'?room='+P.room;$('#rcopy').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(invite());$('#rcopy').textContent='✅ Copied!';setTimeout(()=>$('#rcopy').textContent='🔗 Copy invite link',1500)};
@@ -17,7 +17,7 @@ $('#bav').onclick=()=>{stop();document.body.classList.remove('play-only');open('
 // ---------- avatar editor ----------
 $('#avatar-view').innerHTML=`<div class="avw"><div class="avl"><canvas id="avc" width="480" height="620"></canvas><div class="avb" id="avm"></div><p class="hint">Drag to rotate</p></div><div class="avr"><div class="ar2"><label>Display name</label><input id="avn" maxlength="20"></div><div id="avo"></div></div></div>`;
 let pr,ps,pc,pa,mode='idle',yaw=.5,raf=0,lt=0,down=null;
-['idle','walk','jump','wave','dance'].forEach(m=>{const b=el('button','ch',m);b.onclick=()=>{mode=m;document.querySelectorAll('#avm button').forEach(x=>x.classList.toggle('on',x==b))};if(m=='idle')b.classList.add('on');$('#avm').append(b)});
+['idle','walk','jump'].forEach(m=>{const b=el('button','ch',m);b.onclick=()=>{mode=m;document.querySelectorAll('#avm button').forEach(x=>x.classList.toggle('on',x==b))};if(m=='idle')b.classList.add('on');$('#avm').append(b)});
 $('#avn').value=P.name;$('#avn').onchange=e=>{P.name=PLY.clean(e.target.value.trim()).slice(0,20)||P.name;e.target.value=P.name;PLY.save()};
 function rebuild(){if(pa){ps.remove(pa.g);AV.dispose(pa.g)}pa=AV.make(P.av);ps.add(pa.g)}
 function commit(){P.av=AV.clean(P.av);PLY.save();rebuild();ui()}
@@ -28,7 +28,7 @@ function avStart(){if(!pr){pr=new TH.WebGLRenderer({canvas:$('#avc'),antialias:t
 const pad=new TH.Mesh(new TH.CylinderGeometry(2.4,2.6,.25,48),new TH.MeshStandardMaterial({color:0x232846,roughness:.5}));pad.position.y=-.125;pad.receiveShadow=true;ps.add(pad);const ring=new TH.Mesh(new TH.TorusGeometry(2.5,.05,8,64),new TH.MeshBasicMaterial({color:0x7c5cff}));ring.rotation.x=Math.PI/2;ring.position.y=.02;ps.add(ring);
 pc=new TH.PerspectiveCamera(32,480/620,.1,100);pc.position.set(0,3.5,15);pc.lookAt(0,2.6,0);const c=$('#avc');c.onpointerdown=e=>{down=e.clientX;c.setPointerCapture(e.pointerId)};c.onpointermove=e=>{if(down!=null){yaw+=(e.clientX-down)*.012;down=e.clientX}};c.onpointerup=()=>down=null;rebuild();ui()}
 if(!raf)raf=requestAnimationFrame(lp)}
-function lp(t){raf=0;if($('#avatar-view').classList.contains('hide')||!document.body.classList.contains('menu'))return;raf=requestAnimationFrame(lp);const dt=Math.min(.05,(t-lt)/1000);lt=t;if(down==null)yaw+=dt*.5;pa.g.rotation.y=yaw;pa.g.position.y=mode=='jump'?Math.abs(Math.sin(t/420))*1.3:0;pa.upd(dt,mode=='walk'?16:0,mode=='jump',mode=='wave'||mode=='dance'?mode:'');pr.render(ps,pc)}
+function lp(t){raf=0;if($('#avatar-view').classList.contains('hide')||!document.body.classList.contains('menu'))return;raf=requestAnimationFrame(lp);const dt=Math.min(.05,(t-lt)/1000);lt=t;if(down==null)yaw+=dt*.5;pa.g.rotation.y=yaw;pa.g.position.y=mode=='jump'?Math.abs(Math.sin(t/420))*1.3:0;pa.upd(dt,mode=='walk'?16:0,mode=='jump','');pr.render(ps,pc)}
 // ---------- publish / export ----------
 const dl=(name,text)=>{const u=URL.createObjectURL(new Blob([text],{type:'text/html'})),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000)};
 function publish(){if(playing)return out('Stop Play mode first.');restore();const thumb=captureProjectPreview(),sh=document.createElement('div');sh.className='save-shade';
@@ -91,6 +91,10 @@ if(!CLOUD.on){v.innerHTML=NOCLOUD;return}const rc=recent();
 v.innerHTML=`<div class="me">${av(P.name,true)}<h2>${esc(P.name)}</h2></div><div class="sec">Friends</div><div class="fr" id="frs"></div>${rc.length?'<div class="sec">Continue</div><div class="gal row">'+rc.map(card).join('')+'</div>':''}<div class="sec">Recommended For You</div><div id="gl"><p class="hint">Loading games…</p></div>`;
 bind(v);drawFriends();refreshFriends().then(drawFriends);
 try{ALL=(await CLOUD.list(60)).map(norm);drawGames($('#srch').value)}catch(e){$('#gl').innerHTML='<p class="hint">Could not load games: '+esc(e.message||e)+'</p>'}}
+const PR=(()=>{try{return JSON.parse(localStorage.getItem('plaza_prefs'))||{}}catch(e){return{}}})(),savePr=()=>{try{localStorage.setItem('plaza_prefs',JSON.stringify(PR))}catch(e){}};
+window.QPR=()=>({low:.6,med:1,high:Math.min(devicePixelRatio,2)})[PR.q||'high']||Math.min(devicePixelRatio,2);
+function applyPrefs(){window.LOOKS=PR.sens||1;window.INVY=!!PR.inv;window.QSH=PR.q!='low';document.body.classList.toggle('no-joy',PR.joy===false);if(window.PZ)PZ.setMaster(PR.vol==null?1:PR.vol);try{const v=$('#vp');ren.setPixelRatio(QPR());ren.setSize(v.clientWidth,v.clientHeight,false)}catch(e){}}
+applyPrefs();
 // ----- joining screen + in-game menu -----
 function joinGame(g){const j=$('#jn');j.innerHTML=`${g.thumb?`<img src="${g.thumb}" alt="">`:'<div class="ph">🎮</div>'}<h2>${esc(g.title)}</h2><p>${esc(g.genre||'Game')} · up to ${g.max||12} players</p><div class="sp"></div><small>Joining server</small>`;j.classList.add('open');if(!standalone&&!backup)backup=ser(root);
 setTimeout(()=>{try{if(!standalone)loadRoot(g.project);menu(false);document.body.classList.add('play-only');play();curPlay=g;beat();if(!standalone)pushRecent(g)}catch(e){out('Could not start: '+(e.message||e))}setTimeout(()=>j.classList.remove('open'),500)},700)}
@@ -100,8 +104,15 @@ function gm(on){const m=$('#gm');m.classList.toggle('open',on!==false&&(on===tru
 function gmTab(t){document.querySelectorAll('.gmt button').forEach(x=>x.classList.toggle('on',x.dataset.t==t));const b=$('#gmb');
 if(t=='people'){const ps=[P.name,...PLY.players()];b.innerHTML=`<button class="inv" id="ginv">👤 Invite Friends</button><div class="sec">In this server (${ps.length})</div><div class="pg">${ps.map((n,i)=>`<div class="pcard">${av(n,true)}<b>${esc(n)}</b>${i?'':'<br><small>You</small>'}</div>`).join('')}</div>`;
 $('#ginv').onclick=()=>{const u=curPlay&&curPlay.id?shareUrl(curPlay.id):location.href;try{navigator.clipboard.writeText(u);$('#ginv').textContent='✅ Link copied. Send it to your friends!'}catch(e){prompt('Copy this link:',u)}}}
-else if(t=='settings'){b.innerHTML='<div id="acs"></div><label class="tgl" style="display:block;margin-top:18px"><input type="checkbox" id="gch" '+(document.body.classList.contains('chat-min')?'':'checked')+'> Show chat window</label>';ACC.settings($('#acs'));$('#gch').onchange=e=>document.body.classList.toggle('chat-min',!e.target.checked)}
-else b.innerHTML='<div class="sec">Controls</div><p class="hint">Move: WASD / arrow keys or the on-screen joystick<br>Jump: Space or the jump button<br>Look: drag the screen or hold right mouse<br>Chat: tap 💬 or press Enter<br>Emotes: 👋 💃 🙌 in the chat header<br>Menu: Esc or ☰</p>'}
+else if(t=='settings'){const q=PR.q||'high',on=!document.body.classList.contains('chat-min');
+b.innerHTML=`<div class="sec">Graphics</div><div class="seg" id="gq">${[['low','Low'],['med','Medium'],['high','High']].map(x=>`<button data-q="${x[0]}" class="${q==x[0]?'on':''}">${x[1]}</button>`).join('')}</div><p class="hint">Lower quality runs smoother on phones and tablets.</p>
+<div class="sec">Controls</div><div class="setr"><span>Camera sensitivity</span><input type="range" id="gs" min="0.4" max="2.5" step="0.1" value="${PR.sens||1}"></div><label class="setr"><span>Invert camera up/down</span><input type="checkbox" id="giy" ${PR.inv?'checked':''}></label><label class="setr"><span>Show on-screen joystick</span><input type="checkbox" id="gjy" ${PR.joy===false?'':'checked'}></label>
+<div class="sec">Sound</div><div class="setr"><span>Game volume</span><input type="range" id="gv" min="0" max="1" step="0.05" value="${PR.vol==null?1:PR.vol}"></div>
+<div class="sec">Chat</div><label class="setr"><span>Show chat window</span><input type="checkbox" id="gch" ${on?'checked':''}></label>`;
+$('#gq').onclick=e=>{const x=e.target.closest('button');if(!x)return;PR.q=x.dataset.q;savePr();applyPrefs();document.querySelectorAll('#gq button').forEach(y=>y.classList.toggle('on',y==x))};
+$('#gs').oninput=e=>{PR.sens=+e.target.value;savePr();applyPrefs()};$('#giy').onchange=e=>{PR.inv=e.target.checked;savePr();applyPrefs()};$('#gjy').onchange=e=>{PR.joy=e.target.checked;savePr();applyPrefs()};
+$('#gv').oninput=e=>{PR.vol=+e.target.value;savePr();applyPrefs()};$('#gch').onchange=e=>document.body.classList.toggle('chat-min',!e.target.checked)}
+else b.innerHTML='<div class="sec">Controls</div><p class="hint">Move: WASD / arrow keys or the on-screen joystick<br>Jump: Space or the jump button<br>Look: drag the screen or hold right mouse<br>Chat: tap 💬 or press Enter<br>Menu: Esc or ☰</p>'}
 $('#glogo').onclick=$('#gmenu').onclick=()=>gm();$('#gm').onclick=e=>{if(e.target.id=='gm')gm(false)};$('#gmc').onclick=()=>gm(false);$('#gml').onclick=()=>{gm(false);leave()};$('#gmr').onclick=()=>{gm(false);respawn()};
 document.querySelectorAll('.gmt button').forEach(x=>x.onclick=()=>gmTab(x.dataset.t));
 addEventListener('keydown',e=>{if(e.key=='Escape'&&document.body.classList.contains('playing')){e.preventDefault();gm()}});
