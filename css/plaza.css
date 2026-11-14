@@ -204,3 +204,8 @@ body.chat-min #chat{display:none!important}
 .ac{width:min(400px,100%);background:#1c1d21;border:1px solid var(--ln);border-radius:20px;padding:26px}
 .ac .logo{font-size:30px;letter-spacing:.14em;font-weight:800;color:#fff;background:none;-webkit-text-fill-color:#fff;animation:none;padding:0;margin:0 0 6px}
 .ac input{width:100%;box-sizing:border-box;margin:6px 0}.ac .big{width:100%;margin-top:10px;padding:14px}.ac .subtabs{margin:14px 0 10px}
+
+/* ===== in-game settings ===== */
+.seg{display:flex;gap:6px}.seg button{flex:1;padding:12px;border-radius:10px;background:#25262b;border:0;font-weight:600}.seg button.on{background:#fff;color:#111}
+.setr{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--ln)}.setr input[type=range]{flex:1;max-width:260px}.setr input[type=checkbox]{width:22px;height:22px}
+body.no-joy #joy,body.no-joy #jb,body.no-joy #jd{display:none!important}
